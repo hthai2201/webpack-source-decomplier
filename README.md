@@ -9,7 +9,6 @@ This tool helps reverse engineers and developers analyze webpack-bundled web app
 1. **Finding source maps** - Scans downloaded web application files for `sourceMappingURL` references in webpack bundles
 2. **Downloading source maps** - Automatically downloads the referenced source map files from the web
 3. **Decompiling webpack sources** - Extracts original source code from webpack source maps and recreates the original project structure
-4. **Writing placeholders** - Creates placeholder files for missing sources to maintain project structure
 
 The tool specifically handles webpack's bundling patterns, including:
 
@@ -53,15 +52,16 @@ Create configuration files in the `sources/` directory. Each configuration file 
 ```typescript
 interface Config {
   inputDir: string; // Path to downloaded website files
-  baseUrl: string; // Base URL of the target website
+  baseUrl: string; // Base URL of the target website (trailing slash handled automatically)
   baseOutputDir: string; // Output directory for results
   mapsDir: string; // Subdirectory for source maps
   decompiledDir: string; // Subdirectory for decompiled sources
   exts: string[]; // File extensions to process
+  webpackPrefix?: string; // Optional webpack prefix for module paths (e.g. "_N_E", "trello-client")
 }
 ```
 
-#### Example Configuration
+#### Example Configurations
 
 Create `sources/example.config.json`:
 
@@ -72,7 +72,22 @@ Create `sources/example.config.json`:
   "baseOutputDir": "output",
   "mapsDir": "maps",
   "decompiledDir": "decompiled/src",
-  "exts": [".js", ".jsx", ".ts", ".tsx", ".mjs", ".cjs", ".css", ".scss"]
+  "exts": [".js", ".jsx", ".ts", ".tsx", ".mjs", ".cjs", ".css", ".scss"],
+  "webpackPrefix": "_N_E"
+}
+```
+
+For Trello (`sources/trello.config.json`):
+
+```json
+{
+  "inputDir": "/Users/username/Downloads/sources/https:/trello.com",
+  "baseUrl": "https://trello.com/assets",
+  "baseOutputDir": "output",
+  "mapsDir": "maps",
+  "decompiledDir": "decompiled/src",
+  "exts": [".js", ".jsx", ".ts", ".tsx", ".mjs", ".cjs", ".css", ".scss"],
+  "webpackPrefix": "trello-client"
 }
 ```
 
@@ -110,12 +125,22 @@ Process all configurations in the `sources/` directory:
 npm start
 ```
 
+### Specific Configuration Files
+
+Process only specific configuration files using the `--source` argument:
+
+```bash
+npm start -- --source trello.config.json
+npm start -- --source trello.config.json --source vnuhn.config.json
+```
+
 ### Skip Download Mode
 
 If you want to skip downloading source maps and only decompile existing maps:
 
 ```bash
 npm start -- --skip-download
+npm start -- --source trello.config.json --skip-download
 ```
 
 This is useful for:
@@ -123,6 +148,11 @@ This is useful for:
 - Re-running decompilation after manual source map downloads
 - Testing configuration changes
 - Processing existing source map collections
+
+### CLI Arguments
+
+- `--source <file>`: Specify one or more config files to process (relative to `sources/` directory)
+- `--skip-download`: Skip downloading source maps and only decompile existing ones
 
 ### Output Structure
 
@@ -148,39 +178,41 @@ output/
 
 ```mermaid
 graph TD
-    A[Start] --> B[Load Config Files from sources/*.json]
-    B --> C[For Each Config]
-    C --> D[Scan Input Directory for Source Files]
-    D --> E[Extract sourceMappingURL References]
-    E --> F{Skip Download?}
-    F -->|No| G[Download Missing Source Maps]
-    F -->|Yes| H[Skip Download Step]
-    G --> I[Parse Source Maps]
-    H --> I
-    I --> J[Extract Source Content]
-    J --> K[Recreate File Structure]
-    K --> L[Write Decompiled Files]
-    L --> M[Generate Missing Placeholders]
+    A[Start] --> B[Parse CLI Arguments]
+    B --> C[Load Config Files]
+    C --> D[For Each Config]
+    D --> E[Scan Input Directory for Source Files]
+    E --> F[Extract sourceMappingURL References]
+    F --> G{Skip Download?}
+    G -->|No| H[Download Missing Source Maps]
+    G -->|Yes| I[Skip Download Step]
+    H --> J[Parse Source Maps]
+    I --> J
+    J --> K[Extract Source Content with Custom Webpack Prefix]
+    K --> L[Recreate File Structure]
+    L --> M[Write Decompiled Files]
     M --> N{More Configs?}
-    N -->|Yes| C
+    N -->|Yes| D
     N -->|No| O[Complete]
 
     style A fill:#e1f5fe
     style O fill:#c8e6c9
-    style G fill:#fff3e0
-    style I fill:#f3e5f5
-    style L fill:#e8f5e8
+    style H fill:#fff3e0
+    style J fill:#f3e5f5
+    style M fill:#e8f5e8
 ```
 
 ## Features
 
 - **Webpack Bundle Support**: Specifically designed to handle webpack-bundled applications
+- **Configurable Webpack Prefix**: Support for custom webpack prefixes (e.g., "\_N_E", "trello-client") via config
+- **CLI Argument Support**: Process specific config files with `--source` and `--skip-download` flags
 - **Multi-site Support**: Process multiple website configurations in one run
 - **Automatic Discovery**: Finds source map references in JavaScript and CSS files
 - **Smart Downloading**: Only downloads missing source maps
+- **URL Normalization**: Automatically handles baseUrl with or without trailing slash
 - **Structure Preservation**: Maintains original project structure from webpack source maps
 - **Webpack Path Resolution**: Handles webpack-specific module paths and normalization
-- **Placeholder Generation**: Creates empty files for missing sources
 - **Extension Support**: Works with popular Chrome extensions for source downloading
 - **Skip Mode**: Option to skip downloads for offline processing
 
