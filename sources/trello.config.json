@@ -1,0 +1,9 @@
+{
+  "inputDir": "/Users/luke/Downloads/sources (2)/https:/trello.com",
+  "baseUrl": "https://trello.com/assets",
+  "baseOutputDir": "output",
+  "mapsDir": "maps",
+  "decompiledDir": "decompiled/src",
+  "exts": [".js", ".jsx", ".ts", ".tsx", ".mjs", ".cjs", ".css", ".scss"],
+  "webpackPrefix": "trello-client"
+}

@@ -8,7 +8,8 @@ export async function findAndDownloadMaps(
   skipDownload = false
 ) {
   const inputDir: string = config.inputDir;
-  const baseUrl: string = config.baseUrl;
+  let baseUrl: string = config.baseUrl;
+  if (!baseUrl.endsWith("/")) baseUrl += "/";
   const mapsDir: string = path.join(config.baseOutputDir, config.mapsDir);
   const exts: string[] = config.exts;
 

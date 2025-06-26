@@ -33,8 +33,9 @@ export function decompileMaps(config: Config) {
     const sources: string[] = mapJson.sources || [];
     const sourcesContent: string[] = mapJson.sourcesContent || [];
     for (let i = 0; i < sources.length; i++) {
+      const webpackPrefix = config.webpackPrefix || "_N_E";
       let srcPath = sources[i]
-        .replace(/^webpack:\/\/_N_E\//, "")
+        .replace(new RegExp(`^webpack://${webpackPrefix}/`), "")
         .replace(/^webpack:\/\//, "")
         .replace(/^file:\/\//, "")
         .replace(/^\/+/, "")
